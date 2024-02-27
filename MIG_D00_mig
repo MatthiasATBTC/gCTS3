@@ -1,0 +1,49 @@
+SAPSYSTEMNAME = MIG
+SAPSYSTEM = 00
+INSTANCE_NAME = D00
+DIR_CT_RUN = $(DIR_EXE_ROOT)$(DIR_SEP)$(OS_UNICODE)$(DIR_SEP)linuxx86_64
+DIR_EXECUTABLE = $(DIR_INSTANCE)/exe
+DIR_PROFILE = $(DIR_INSTALL)$(DIR_SEP)profile
+_PF = $(DIR_PROFILE)/MIG_D00_mig
+SETENV_00 = DIR_LIBRARY=$(DIR_LIBRARY)
+SETENV_01 = LD_LIBRARY_PATH=$(DIR_LIBRARY):$(DIR_EXECUTABLE)$(DIR_SEP)hdbclient:%(LD_LIBRARY_PATH)
+SETENV_02 = SHLIB_PATH=$(DIR_LIBRARY):$(DIR_EXECUTABLE)$(DIR_SEP)hdbclient:%(SHLIB_PATH)
+SETENV_03 = LIBPATH=$(DIR_LIBRARY):$(DIR_EXECUTABLE)$(DIR_SEP)hdbclient:%(LIBPATH)
+SETENV_04 = PATH=$(DIR_EXECUTABLE):$(DIR_EXECUTABLE)$(DIR_SEP)hdbclient:%(PATH)
+#-----------------------------------------------------------------------
+# Copy SAP Executables
+#-----------------------------------------------------------------------
+Execute_00 = immediate $(DIR_CT_RUN)/sapcpe$(FT_EXE) pf=$(_PF)
+_CPARG0 = list:$(DIR_CT_RUN)$(DIR_SEP)hdbclient$(DIR_SEP)hdbclient.lst
+_CPARG1 = source:$(DIR_CT_RUN)$(DIR_SEP)hdbclient
+_CPARG2 = target:$(DIR_EXECUTABLE)$(DIR_SEP)hdbclient
+Execute_01 = immediate $(DIR_CT_RUN)/sapcpe$(FT_EXE) pf=$(_PF) $(_CPARG0) $(_CPARG1) $(_CPARG2)
+Execute_02 = immediate $(DIR_CT_RUN)/sapcpe$(FT_EXE) pf=$(_PF)
+SETENV_05 = SECUDIR=$(DIR_INSTANCE)/sec
+_CPARG3 = list:$(DIR_CT_RUN)/sapcrypto.lst
+Execute_03 = immediate $(DIR_CT_RUN)/sapcpe$(FT_EXE) pf=$(_PF) $(_CPARG3)
+exe/saposcol = $(DIR_CT_RUN)/saposcol
+rdisp/wp_no_dia = 12
+rdisp/wp_no_btc = 8
+rdisp/wp_no_vb = 1
+rdisp/wp_no_vb2 = 1
+rdisp/wp_no_spo = 1
+exe/icmbnd = $(DIR_CT_RUN)/icmbnd
+#-----------------------------------------------------------------------
+# Start SCSA administration
+#-----------------------------------------------------------------------
+Execute_04 = local $(DIR_EXECUTABLE)/sapmscsa pf=$(_PF) -n
+#-----------------------------------------------------------------------
+# Start application server
+#-----------------------------------------------------------------------
+_DW = dw.sap$(SAPSYSTEMNAME)_$(INSTANCE_NAME)
+Execute_05 = local rm -f $(_DW)
+Execute_06 = local ln -s -f $(DIR_EXECUTABLE)/disp+work$(FT_EXE) $(_DW)
+Start_Program_00 = local $(_DW) pf=$(_PF)
+#-----------------------------------------------------------------------
+# Start internet graphics server
+#-----------------------------------------------------------------------
+_IG = ig.sap$(SAPSYSTEMNAME)_$(INSTANCE_NAME)
+Execute_07 = local rm -f $(_IG)
+Execute_08 = local ln -s -f $(DIR_EXECUTABLE)/igswd_mt $(_IG)
+Start_Program_01 = local $(_IG) -mode=profile pf=$(_PF)
